@@ -8,6 +8,7 @@ import com.boil.entity.message.LovelyCatBean;
 import com.boil.service.BaseMessageService;
 import com.boil.service.DebuggerService;
 import com.boil.service.LovelyCatService;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -53,12 +54,13 @@ public class WechatController
         }
         String echostr = request.getParameter(ECHOSTR);
         // 微信配置验证
-        if (echostr != null) {
+        if (echostr != null)
+        {
             return echostr;
         }
 
         Map<String, String> map = WechatMessageUtils.xmlToMap(request);
-        if(map.isEmpty())
+        if (map.isEmpty())
         {
             return null;
         }
@@ -79,11 +81,24 @@ public class WechatController
         lovelyCatBean.setTo_wxid(wechatMessageParameter.getSource());
         lovelyCatBean.setType("100");
 
-        String content = "没收录的指令！";
+        String content = "";
         if (order.contains(DebuggerOrder.TASK))
         {
             content = debuggerService.pushTask(wechatMessageParameter);
-        } else {
+        } else if (order.contains(DebuggerOrder.TODO))
+        {
+            // 待办
+            content = debuggerService.listTodo(wechatMessageParameter);
+            if (StringUtils.isNoneEmpty(content) && LovelyCatMessageUtils.TYPE_GROUP.equals(type))
+            {
+                // 待办 并艾特发命令的人
+                content = "\n" + content;
+                lovelyCatBean.setType(LovelyCatMessageUtils.TYPE_GROUP_AT);
+                lovelyCatBean.setAt_name(wechatMessageParameter.getSender());
+                lovelyCatBean.setAt_wxid(wechatMessageParameter.getSenderId());
+            }
+        } else
+        {
             if (LovelyCatMessageUtils.TYPE_PRIVATE.equals(type))
             {
                 // 私聊
@@ -91,12 +106,6 @@ public class WechatController
                 if (order.contains(DebuggerOrder.HELP))
                 {
                     content = debuggerService.debuggerHelp();
-                }
-
-                // 待办
-                if (order.contains(DebuggerOrder.TODO))
-                {
-                    content = debuggerService.listTodo(wechatMessageParameter);
                 }
 
                 // 待办 完成
@@ -127,5 +136,11 @@ public class WechatController
 
         return lovelyCatService.sendMsg(lovelyCatBean);
 
+    }
+
+    @RequestMapping("/todoReport")
+    public void todoReport()
+    {
+        debuggerService.todoReport("");
     }
 }

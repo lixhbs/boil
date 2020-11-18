@@ -22,9 +22,6 @@ import java.net.URLEncoder;
 @Service
 public class LovelyCatServiceImpl implements LovelyCatService
 {
-    @Autowired
-    private DebuggerService debuggerService;
-
     @Override
     public String sendMsg(LovelyCatBean lovelyCatBean)
     {
@@ -32,4 +29,6 @@ public class LovelyCatServiceImpl implements LovelyCatService
         RestTemplate restTemplate = new RestTemplate();
         return restTemplate.postForObject("http://192.168.6.113:8073/send", request, String.class);
     }
+
+
 }

@@ -54,4 +54,13 @@ public interface DebuggerService
      * @date 2020/11/17 16:44
      */
     String todoFinish(WechatMessageParameter wechatMessageParameter);
+
+    /**
+     * 当前团队的待办报告
+     * @author Lix.
+     * @param groupId 群微信id
+     * @return boolean 是否发送成功
+     * @date 2020/11/17 17:24
+     */
+    boolean todoReport(String groupId);
 }

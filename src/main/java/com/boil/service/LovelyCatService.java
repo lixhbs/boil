@@ -22,4 +22,5 @@ public interface LovelyCatService
      * @date 2020/11/16 15:25
      */
     String sendMsg(LovelyCatBean lovelyCatBean);
+
 }

@@ -32,6 +32,11 @@ public class LovelyCatMessageUtils
      */
     public static final String TYPE_GROUP = "200";
 
+    /**
+     * 群聊aite
+     */
+    public static final String TYPE_GROUP_AT = "102";
+
 
 
 }

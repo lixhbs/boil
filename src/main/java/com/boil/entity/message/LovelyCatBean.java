@@ -121,6 +121,12 @@ public class LovelyCatBean
         if (StringUtils.isNotEmpty(this.from_wxid)){
             jsonObject.put("from_wxid", this.from_wxid);
         }
+        if (StringUtils.isNotEmpty(this.at_name)){
+            jsonObject.put("at_name", this.at_name);
+        }
+        if (StringUtils.isNotEmpty(this.at_wxid)){
+            jsonObject.put("at_wxid", this.at_wxid);
+        }
         if (StringUtils.isNotEmpty(this.key)){
             jsonObject.put("key", this.key);
         }

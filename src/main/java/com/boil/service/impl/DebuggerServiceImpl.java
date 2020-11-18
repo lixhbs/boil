@@ -1,22 +1,20 @@
 package com.boil.service.impl;
 
-import com.boil.common.DebuggerOrder;
 import com.boil.common.LovelyCatMessageUtils;
-import com.boil.common.WechatMessageUtils;
 import com.boil.dao.TaskMapper;
 import com.boil.entity.WechatMessageParameter;
+import com.boil.entity.message.LovelyCatBean;
 import com.boil.model.Task;
 import com.boil.model.TaskExample;
 import com.boil.service.DebuggerService;
+import com.boil.service.LovelyCatService;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.text.MessageFormat;
 import java.text.SimpleDateFormat;
-import java.time.Instant;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
@@ -35,6 +33,9 @@ public class DebuggerServiceImpl implements DebuggerService
 
     @Autowired
     private TaskMapper taskMapper;
+
+    @Autowired
+    private LovelyCatService lovelyCatService;
 
     @Override
     public String debuggerHelp()
@@ -171,5 +172,19 @@ public class DebuggerServiceImpl implements DebuggerService
     public String todoFinish(WechatMessageParameter wechatMessageParameter)
     {
         return todoStatus(wechatMessageParameter, 1);
+    }
+
+    @Override
+    public boolean todoReport(String groupId)
+    {
+        LovelyCatBean lovelyCatBean = new LovelyCatBean();
+        lovelyCatBean.setType(LovelyCatMessageUtils.TYPE_GROUP_AT);
+        lovelyCatBean.setMsg("ceshi");
+        lovelyCatBean.setRobot_wxid("wxid_rui633rzzwdu11");
+        lovelyCatBean.setTo_wxid("20532097698@chatroom");
+        lovelyCatBean.setAt_wxid("simpleup");
+        lovelyCatBean.setAt_name("Lix.,李牧之");
+        lovelyCatService.sendMsg(lovelyCatBean);
+        return false;
     }
 }

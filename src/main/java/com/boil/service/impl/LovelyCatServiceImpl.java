@@ -1,16 +1,10 @@
 package com.boil.service.impl;
 
-import com.boil.common.DebuggerOrder;
 import com.boil.entity.message.LovelyCatBean;
-import com.boil.service.DebuggerService;
 import com.boil.service.LovelyCatService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
-
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
 
 /**
  * @author lix.
@@ -28,6 +22,30 @@ public class LovelyCatServiceImpl implements LovelyCatService
         HttpEntity<String> request = new HttpEntity<>(lovelyCatBean.toString());
         RestTemplate restTemplate = new RestTemplate();
         return restTemplate.postForObject("http://192.168.6.113:8073/send", request, String.class);
+    }
+
+    @Override
+    public String getLoggedAccountList()
+    {
+        return null;
+    }
+
+    @Override
+    public String sendGroupAtMsg(String toWxId, String atWxId, String atName, String msg)
+    {
+        return null;
+    }
+
+    @Override
+    public String getGroupList(String isRefresh)
+    {
+        return null;
+    }
+
+    @Override
+    public String getGroupMemberList(String groupWxId, String isRefresh)
+    {
+        return null;
     }
 
 

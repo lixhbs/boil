@@ -58,13 +58,23 @@ public interface LovelyCatService
      * 取群成员列表
      *
      * $data['type'] = 206;                // Api数值（可以参考 - api列表demo）
-     * $data['robot_wxid'] = $robwxid;     // 账户id
+     * @param robWxId $data['robot_wxid'] = $robwxid;     // 账户id
      * @param  groupWxId $data['group_wxid'] = $group_wxid;  // 群id
      * @param  isRefresh $data['is_refresh'] = $is_refresh;  // 是否刷新列表，0 从缓存获取 / 1 刷新并获取
      *
      * @return string 当前框架已登录的账号信息列表
      */
-    String getGroupMemberList(String groupWxId, String isRefresh);
+    String getGroupMemberList(String robWxId, String groupWxId, String isRefresh);
 
-
+    /**
+     *
+     * @author Lix.
+     * @access public
+     * @param  robotWxId $robwxid     账户id
+     * @param  groupNum $group_wxid  群id
+     * @param  notice $notice      新公告
+     * @return string json_string
+     * @date 2020/11/18 19:01
+     */
+    String modifyGroupNotice(String robotWxId, String groupNum, String notice);
 }

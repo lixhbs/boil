@@ -1,14 +1,25 @@
 package com.boil.service.impl;
 
 import com.alibaba.fastjson.JSONArray;
+import com.alibaba.fastjson.JSONObject;
 import com.boil.common.LovelyCatMessageUtils;
 import com.boil.entity.message.LovelyCatBean;
 import com.boil.service.LovelyCatService;
+import com.mashape.unirest.http.HttpResponse;
+import com.mashape.unirest.http.JsonNode;
+import com.mashape.unirest.http.Unirest;
+import com.mashape.unirest.http.exceptions.UnirestException;
+import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.converter.StringHttpMessageConverter;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 
 /**
  * @author lix.
@@ -24,9 +35,19 @@ public class LovelyCatServiceImpl implements LovelyCatService
     @Override
     public String sendMsg(LovelyCatBean lovelyCatBean)
     {
-        HttpEntity<String> request = new HttpEntity<>(lovelyCatBean.toString());
-        RestTemplate restTemplate = new RestTemplate();
-        return restTemplate.postForObject("http://192.168.6.113:8073/send", request, String.class);
+        try
+        {
+            JSONObject jsonObject = new JSONObject();
+            HttpResponse<JsonNode> jsonResponse = Unirest.post("http://192.168.6.113:8073/send")
+                    .header("Content-Type", "application/x-www-form-urlencoded")
+                    .field("data", lovelyCatBean.toString())
+                    .asJson();
+            return jsonResponse.getBody().toString();
+        } catch (UnirestException e)
+        {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     @Override
@@ -69,9 +90,25 @@ public class LovelyCatServiceImpl implements LovelyCatService
     }
 
     @Override
-    public String getGroupMemberList(String groupWxId, String isRefresh)
+    public String getGroupMemberList(String robWxId, String groupWxId, String isRefresh)
     {
-        return null;
+        LovelyCatBean lovelyCatBean = new LovelyCatBean();
+        lovelyCatBean.setType(LovelyCatMessageUtils.TYPE_GROUP_MEMBER_LIST);
+        lovelyCatBean.setRobot_wxid(robWxId);
+        lovelyCatBean.setGroup_wxid(groupWxId);
+        lovelyCatBean.setIs_refresh(isRefresh);
+        return sendMsg(lovelyCatBean);
+    }
+
+    @Override
+    public String modifyGroupNotice(String robotWxId, String groupNum, String notice)
+    {
+        LovelyCatBean lovelyCatBean = new LovelyCatBean();
+        lovelyCatBean.setType(LovelyCatMessageUtils.TYPE_MODIFY_GROUP_NOTICE);
+        lovelyCatBean.setRobot_wxid(robotWxId);
+        lovelyCatBean.setGroup_wxid(groupNum);
+        lovelyCatBean.setNotice(notice);
+        return sendMsg(lovelyCatBean);
     }
 
 

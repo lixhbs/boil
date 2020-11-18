@@ -139,6 +139,9 @@ public class WechatController
 
             try
             {
+                if (StringUtils.isEmpty(content)){
+                    return null;
+                }
                 lovelyCatBean.setMsg(URLEncoder.encode(content, "UTF-8"));
             } catch (UnsupportedEncodingException e)
             {

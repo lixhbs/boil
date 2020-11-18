@@ -21,6 +21,39 @@ public class LovelyCatBean
     String at_name = "";
     String from_wxid = "";
     String key = "";
+    String group_wxid = "";
+    String is_refresh = "";
+    String notice = "";
+
+    public String getNotice()
+    {
+        return notice;
+    }
+
+    public void setNotice(String notice)
+    {
+        this.notice = notice;
+    }
+
+    public String getGroup_wxid()
+    {
+        return group_wxid;
+    }
+
+    public void setGroup_wxid(String group_wxid)
+    {
+        this.group_wxid = group_wxid;
+    }
+
+    public String getIs_refresh()
+    {
+        return is_refresh;
+    }
+
+    public void setIs_refresh(String is_refresh)
+    {
+        this.is_refresh = is_refresh;
+    }
 
     public String getKey()
     {
@@ -105,6 +138,7 @@ public class LovelyCatBean
     @Override
     public String toString()
     {
+        // 这里需要优化 TODO
         JSONObject jsonObject = new JSONObject();
         if (StringUtils.isNotEmpty(this.type)){
             jsonObject.put("type", this.type);
@@ -129,6 +163,15 @@ public class LovelyCatBean
         }
         if (StringUtils.isNotEmpty(this.key)){
             jsonObject.put("key", this.key);
+        }
+        if (StringUtils.isNotEmpty(this.group_wxid)){
+            jsonObject.put("group_wxid", this.group_wxid);
+        }
+        if (StringUtils.isNotEmpty(this.is_refresh)){
+            jsonObject.put("is_refresh", this.is_refresh);
+        }
+        if (StringUtils.isNotEmpty(this.notice)){
+            jsonObject.put("notice", this.notice);
         }
         return jsonObject.toJSONString();
     }

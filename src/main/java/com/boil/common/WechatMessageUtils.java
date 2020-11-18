@@ -207,11 +207,13 @@ public class WechatMessageUtils
         LocalDate parse = LocalDate.parse(strDate, formatter);
         Instant instant2 = parse.atStartOfDay().atZone(ZoneId.systemDefault()).toInstant();
         wechatMessageParameter.setDate(Date.from(instant2));
-
-        String content = msg.replaceAll(msgOrder, "")
-                .replaceAll("\\[@at(.+?)[]]", "")
-                .replaceAll("[0-9]{4}-[0-9]{2}-[0-9]{2}", "")
-                .trim();
+        String content = "";
+        if(!msg.equals(msgOrder)) {
+            content = msg.replaceAll(msgOrder, "")
+                    .replaceAll("\\[@at(.+?)[]]", "")
+                    .replaceAll("[0-9]{4}-[0-9]{2}-[0-9]{2}", "")
+                    .trim();
+        }
         wechatMessageParameter.setContent(content);
         return wechatMessageParameter;
     }

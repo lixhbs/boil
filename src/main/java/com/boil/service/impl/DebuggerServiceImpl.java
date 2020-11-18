@@ -3,6 +3,8 @@ package com.boil.service.impl;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.boil.common.DebuggerOrder;
+import com.boil.common.LovelyCatMessageUtils;
+import com.boil.common.WechatMessageUtils;
 import com.boil.dao.RobotMapper;
 import com.boil.dao.TaskMapper;
 import com.boil.dao.TimedtaskMapper;
@@ -14,13 +16,14 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.text.MessageFormat;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
 /**
  * @author lix.
@@ -249,6 +252,99 @@ public class DebuggerServiceImpl implements DebuggerService
             wechatMessageParameter.setContent("2 5");
         }
         return registerTimedTask(wechatMessageParameter);
+    }
+
+    @Override
+    public String daily()
+    {
+        // 查询日报的定时任务
+        TimedtaskExample timedtaskExample = new TimedtaskExample();
+        TimedtaskExample.Criteria criteria = timedtaskExample.createCriteria();
+        criteria.andNameEqualTo(DebuggerOrder.DAILY);
+
+        List<Timedtask> timedtasks = timedtaskMapper.selectByExample(timedtaskExample);
+        // 这里默认发第一个群
+
+        Timedtask timedtask = timedtasks.get(0);
+        String groupnum = timedtask.getGroupnum();
+
+        // 根据群号 获取群里面的人员信息，然后去待办表里面查用户数据
+        Robot robotInfo = getRobotInfo();
+        String robotWxId = robotInfo.getWxid();
+        String groupMemberList = lovelyCatService.getGroupMemberList(robotWxId, groupnum, "1");
+
+        try
+        {
+            ArrayList<String> strings = new ArrayList<>();
+            HashMap<String, String> stringStringHashMap = new HashMap<>(10);
+
+            JSONArray jsonArray = LovelyCatMessageUtils.stringToJsonArray(groupMemberList);
+            if (jsonArray != null && jsonArray.size() > 0){
+                for (Object item : jsonArray)
+                {
+                    JSONObject jsonObject = (JSONObject) item;
+                    String wxid = jsonObject.getString("wxid");
+                    if (robotWxId.equals(wxid))
+                    {
+                        continue;
+                    }
+                    strings.add(wxid);
+                    String nickname = jsonObject.getString("nickname");
+                    stringStringHashMap.put(wxid, nickname);
+                }
+            }
+
+            TaskExample taskExample = new TaskExample();
+            TaskExample.Criteria criteria1 = taskExample.createCriteria();
+            criteria1.andReceiverWxidIn(strings);
+            criteria1.andStatusEqualTo(0);
+            List<Task> tasks = taskMapper.selectByExample(taskExample);
+            if (tasks != null && tasks.size() > 0)
+            {
+                String notice = sortTasks(tasks, stringStringHashMap);
+                return lovelyCatService.modifyGroupNotice(robotWxId, groupnum, notice);
+            }
+
+        } catch (UnsupportedEncodingException e)
+        {
+            e.printStackTrace();
+        }
+
+        return "";
+    }
+
+    private String sortTasks(List<Task> tasks, HashMap<String, String> stringStringHashMap)
+    {
+        // 任务总数
+        int taskSize = tasks.size();
+
+        HashMap<String, List<Task>> taskInfoListHashMap = new HashMap<>(10);
+
+        for (Task task : tasks)
+        {
+            // 获取中文名称
+            String cnName = stringStringHashMap.get(task.getReceiverWxid());
+
+            // 任务内容 记录到任务表里面
+            String content = task.getContent();
+            List<Task> strings = taskInfoListHashMap.get(cnName);
+            if ( strings == null) {
+                strings = new ArrayList<>();
+            }
+            strings.add(task);
+            taskInfoListHashMap.put(cnName, strings);
+        }
+
+        return createTemplate(DebuggerOrder.DAILY, taskSize, taskInfoListHashMap);
+    }
+
+    private String createTemplate(String taskType, int taskSize, HashMap<String, List<Task>> taskInfoListHashMap)
+    {
+        StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append(" --- ").append(taskType).append("---\n");
+        stringBuilder.append("总任务：").append(taskSize);
+
+        return stringBuilder.toString();
     }
 
     /**

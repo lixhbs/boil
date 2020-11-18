@@ -27,6 +27,8 @@ import java.util.Map;
 public class LovelyCatMessageUtils
 {
 
+    public static final String TYPE_MODIFY_GROUP_NOTICE = "308";
+
     private static final String CODE = "0";
     /**
      * 私聊
@@ -42,6 +44,12 @@ public class LovelyCatMessageUtils
      * 群聊aite
      */
     public static final String TYPE_GROUP_AT = "102";
+
+    /**
+     * 群聊列表
+     */
+    public static final String TYPE_GROUP_MEMBER_LIST = "206";
+
 
     /**
      * 字符串转json数组

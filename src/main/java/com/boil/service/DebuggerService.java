@@ -113,4 +113,11 @@ public interface DebuggerService
      */
     String registerWeekly(WechatMessageParameter wechatMessageParameter);
 
+    /**
+     * 发送日报
+     * @author Lix.
+     * @return String
+     * @date 2020/11/18 18:32
+     */
+    String daily();
 }

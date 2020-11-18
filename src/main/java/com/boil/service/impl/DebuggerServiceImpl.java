@@ -1,11 +1,13 @@
 package com.boil.service.impl;
 
-import com.boil.common.LovelyCatMessageUtils;
+import com.alibaba.fastjson.JSONArray;
+import com.alibaba.fastjson.JSONObject;
+import com.boil.common.DebuggerOrder;
+import com.boil.dao.RobotMapper;
 import com.boil.dao.TaskMapper;
+import com.boil.dao.TimedtaskMapper;
 import com.boil.entity.WechatMessageParameter;
-import com.boil.entity.message.LovelyCatBean;
-import com.boil.model.Task;
-import com.boil.model.TaskExample;
+import com.boil.model.*;
 import com.boil.service.DebuggerService;
 import com.boil.service.LovelyCatService;
 import org.apache.commons.lang3.StringUtils;
@@ -36,6 +38,12 @@ public class DebuggerServiceImpl implements DebuggerService
 
     @Autowired
     private LovelyCatService lovelyCatService;
+
+    @Autowired
+    private RobotMapper robotMapper;
+
+    @Autowired
+    private TimedtaskMapper timedtaskMapper;
 
     @Override
     public String debuggerHelp()
@@ -161,7 +169,8 @@ public class DebuggerServiceImpl implements DebuggerService
         Task task = new Task();
         task.setStatus(status);
         int res = taskMapper.updateByExampleSelective(task, taskExample);
-        if (res == 1) {
+        if (res == 1)
+        {
             return "状态修改成功！";
         }
 
@@ -177,14 +186,126 @@ public class DebuggerServiceImpl implements DebuggerService
     @Override
     public boolean todoReport(String groupId)
     {
-        LovelyCatBean lovelyCatBean = new LovelyCatBean();
-        lovelyCatBean.setType(LovelyCatMessageUtils.TYPE_GROUP_AT);
-        lovelyCatBean.setMsg("ceshi");
-        lovelyCatBean.setRobot_wxid("wxid_rui633rzzwdu11");
-        lovelyCatBean.setTo_wxid("20532097698@chatroom");
-        lovelyCatBean.setAt_wxid("simpleup");
-        lovelyCatBean.setAt_name("Lix.,李牧之");
-        lovelyCatService.sendMsg(lovelyCatBean);
+
         return false;
     }
+
+    @Override
+    public Robot getRobotInfoSync()
+    {
+        JSONArray loggedAccountList = lovelyCatService.getLoggedAccountList();
+        if (loggedAccountList == null)
+        {
+            throw new NullPointerException("未获取到机器人数据");
+        }
+        Robot robot = new Robot();
+        JSONObject jsonObject = (JSONObject) loggedAccountList.get(0);
+        robot.setWxid(jsonObject.getString("wxid"));
+        robot.setWxNum(jsonObject.getString("wx_num"));
+        robot.setHeadimgurl(jsonObject.getString("headimgurl"));
+        robotMapper.insert(robot);
+        return robot;
+    }
+
+    @Override
+    public Robot getRobotInfo()
+    {
+        Robot robot = null;
+        RobotExample robotExample = new RobotExample();
+        List<Robot> robots = robotMapper.selectByExample(robotExample);
+        if (robots == null || robots.size() == 0)
+        {
+            robot = getRobotInfoSync();
+        } else
+        {
+            robot = robots.get(0);
+        }
+        return robot;
+    }
+
+    @Override
+    public String sendGroupAtMsg(String toWxId, String atWxId, String atName, String msg)
+    {
+        Robot robotInfo = getRobotInfo();
+        String res = lovelyCatService.sendGroupAtMsg(robotInfo.getWxid(), toWxId, atWxId, atName, msg);
+        return res;
+    }
+
+    @Override
+    public String registerDaily(WechatMessageParameter wechatMessageParameter)
+    {
+        if (StringUtils.isEmpty(wechatMessageParameter.getContent()) || DebuggerOrder.DAILY.equals(wechatMessageParameter.getMsg()))
+        {
+            wechatMessageParameter.setContent("1 2");
+        }
+        return registerTimedTask(wechatMessageParameter);
+    }
+
+    @Override
+    public String registerWeekly(WechatMessageParameter wechatMessageParameter)
+    {
+        if (StringUtils.isEmpty(wechatMessageParameter.getContent()) || DebuggerOrder.WEEKLY.equals(wechatMessageParameter.getMsg()))
+        {
+            wechatMessageParameter.setContent("2 5");
+        }
+        return registerTimedTask(wechatMessageParameter);
+    }
+
+    /**
+     * 注册定时任务
+     *
+     * @param wechatMessageParameter wechatMessageParameter
+     * @return String
+     * @author Lix.
+     * @date 2020/11/18 18:06
+     */
+    String registerTimedTask(WechatMessageParameter wechatMessageParameter)
+    {
+        String groupId = wechatMessageParameter.getGroupId();
+        String order = wechatMessageParameter.getOrder();
+
+        Timedtask timedtask = new Timedtask();
+        timedtask.setGroupnum(groupId);
+        String msg = wechatMessageParameter.getContent();
+        timedtask.setName(order);
+        String[] taskOrder = msg.split(" ");
+        if (taskOrder.length < 2)
+        {
+            return "指令参数有误！【" + DebuggerOrder.DAILY + " 1 2 / " + DebuggerOrder.WEEKLY + " 2 5】";
+        }
+        timedtask.setCycletype(Integer.parseInt(taskOrder[0]));
+        if (DebuggerOrder.DAILY.equals(wechatMessageParameter.getOrder()))
+        {
+            timedtask.setDatetype(Integer.parseInt(taskOrder[1]));
+        }
+        if (DebuggerOrder.WEEKLY.equals(wechatMessageParameter.getOrder()))
+        {
+            timedtask.setSomeday(Integer.parseInt(taskOrder[1]));
+        }
+        TimedtaskExample timedtaskExample = new TimedtaskExample();
+        TimedtaskExample.Criteria criteria = timedtaskExample.createCriteria();
+        criteria.andGroupnumEqualTo(groupId);
+        criteria.andNameEqualTo(order);
+
+        List<Timedtask> timedTasks = timedtaskMapper.selectByExample(timedtaskExample);
+        int insert = 0;
+        if (timedTasks != null && timedTasks.size() > 0)
+        {
+            Timedtask timedTask1 = timedTasks.get(0);
+            Integer id = timedTask1.getId();
+            timedtask.setId(id);
+            insert = timedtaskMapper.updateByPrimaryKey(timedtask);
+        } else
+        {
+            insert = timedtaskMapper.insert(timedtask);
+        }
+
+        if (insert > 0)
+        {
+            return "定时任务注册成功！";
+        }
+
+        return "定时任务注册失败！";
+    }
+
 }

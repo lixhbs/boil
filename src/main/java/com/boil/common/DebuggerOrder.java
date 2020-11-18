@@ -27,4 +27,8 @@ public class DebuggerOrder
     public static final String TODO = "#待办";
 
     public static final String FINISH = "#完成";
+
+    public static final String DAILY = "#注册日报";
+
+    public static final String WEEKLY = "#注册周报";
 }

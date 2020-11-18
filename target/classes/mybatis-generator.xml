@@ -38,7 +38,7 @@
         </javaClientGenerator>
 
 
-        <table schema="boil" tableName="task"/>
+        <table schema="boil" tableName="timedtask"/>
 
     </context>
 

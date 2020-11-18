@@ -1,6 +1,9 @@
 package com.boil.service;
 
+import com.alibaba.fastjson.JSONArray;
 import com.boil.entity.message.LovelyCatBean;
+
+import java.io.UnsupportedEncodingException;
 
 /**
  * @author li
@@ -27,7 +30,7 @@ public interface LovelyCatService
      * 取登录账号列表
      * @return string 当前框架已登录的账号信息列表
      */
-    String getLoggedAccountList();
+    JSONArray getLoggedAccountList();
 
     /**
      * 发送群消息并艾特某人
@@ -39,7 +42,7 @@ public interface LovelyCatService
      * @return String
      * @date 2020/11/18 08:52
      */
-    String sendGroupAtMsg(String toWxId, String atWxId, String atName, String msg);
+    String sendGroupAtMsg(String robot, String toWxId, String atWxId, String atName, String msg);
 
     /**
      * 取群聊列表
@@ -62,4 +65,6 @@ public interface LovelyCatService
      * @return string 当前框架已登录的账号信息列表
      */
     String getGroupMemberList(String groupWxId, String isRefresh);
+
+
 }

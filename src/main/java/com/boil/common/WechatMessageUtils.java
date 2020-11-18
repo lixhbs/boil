@@ -211,7 +211,7 @@ public class WechatMessageUtils
         String content = msg.replaceAll(msgOrder, "")
                 .replaceAll("\\[@at(.+?)[]]", "")
                 .replaceAll("[0-9]{4}-[0-9]{2}-[0-9]{2}", "")
-                .replaceAll(" ", "");
+                .trim();
         wechatMessageParameter.setContent(content);
         return wechatMessageParameter;
     }

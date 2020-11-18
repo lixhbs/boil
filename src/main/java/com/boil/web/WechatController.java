@@ -122,6 +122,18 @@ public class WechatController
                     {
                         content = debuggerService.pushTask(wechatMessageParameter);
                     }
+
+                    // 注册日报
+                    if (order.contains(DebuggerOrder.DAILY))
+                    {
+                        content = debuggerService.registerDaily(wechatMessageParameter);
+                    }
+
+                    // 注册日报
+                    if (order.contains(DebuggerOrder.WEEKLY))
+                    {
+                        content = debuggerService.registerWeekly(wechatMessageParameter);
+                    }
                 }
             }
 

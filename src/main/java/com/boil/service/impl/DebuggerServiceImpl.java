@@ -5,10 +5,7 @@ import com.alibaba.fastjson.JSONObject;
 import com.boil.common.BoilUtil;
 import com.boil.common.DebuggerOrder;
 import com.boil.common.LovelyCatMessageUtils;
-import com.boil.dao.RobotMapper;
-import com.boil.dao.TaskMapper;
-import com.boil.dao.TimedtaskMapper;
-import com.boil.dao.UseraccountMapper;
+import com.boil.dao.*;
 import com.boil.entity.WechatMessageParameter;
 import com.boil.model.*;
 import com.boil.service.DebuggerService;
@@ -51,7 +48,10 @@ public class DebuggerServiceImpl implements DebuggerService
     private TimedtaskMapper timedtaskMapper;
 
     @Autowired
-    protected UseraccountMapper useraccountMapper;
+    private UseraccountMapper useraccountMapper;
+
+    @Autowired
+    private ProjectMapper projectMapper;
 
     @Override
     public String debuggerHelp()
@@ -59,12 +59,16 @@ public class DebuggerServiceImpl implements DebuggerService
         return " ── HELP ──\n" +
                 "命令和内容中间要加一个空格\n" +
                 "#任务 发布任务，可以指定时间，默认是当天。 \n" +
-                "\t\t\t\t『群聊』指定返送人，如：#任务 @陈伟杰 任务内容 2020-11-19\n" +
-                "\t\t\t\t『私聊』默认发送给自己 ，如：#任务 任务内容 2020-11-19\n" +
-                "#待办『私聊』查询自己的待办任务\n" +
+                "\n\t\t\t\t『群聊』指定返送人\n" +
+                "如：#任务 @陈伟杰 【CAFP】任务内容 2020-11-19\n" +
+                "解释：<指令> <执行人> <项目代码（可以发送#项目代码 查看）> <任务内容> [时间（默认当天）]\n" +
+                "\n\t\t\t\t『私聊』默认发送给自己 ，如：#任务 【CAFP】任务内容 2020-11-19\n" +
+                "解释：<指令> <项目代码（可以发送#项目代码 查看）> <任务内容> [时间（默认当天）]\n" +
+                "\n#待办『私聊』查询自己的待办任务\n" +
                 "#完成『私聊』加上待办编号，此条待办标记完成 ，如：#完成 3 \n" +
 //                "【#项目列表】『*』所有项目\n" +
                 "#实名『私聊』修改昵称\n" +
+                "##项目代码『*』查询项目代码\n" +
 //                "【#未处理】显示自己没有修复的BUG\n" +
 //                "【#认领-'BUG编码'】认领bug然后开始修复， 如：#认领-BTTEST0101002 \n" +
 //                "【#解决-'BUG编码'】BUG修复完后在群中发送， 如：#解决-BTTEST0101002 \n" +
@@ -84,6 +88,11 @@ public class DebuggerServiceImpl implements DebuggerService
         {
             return "任务未指定执行人！";
         }
+        String projectCode = wechatMessageParameter.getProjectCode();
+        if (StringUtils.isEmpty(projectCode))
+        {
+            return "请输入项目代码，如： 【CAFP】，可以发送" + DebuggerOrder.PROJECT_CODE + " 查询";
+        }
         String content = wechatMessageParameter.getContent();
         if (StringUtils.isEmpty(content))
         {
@@ -102,6 +111,7 @@ public class DebuggerServiceImpl implements DebuggerService
         task.setUntitled(wechatMessageParameter.getSenderId());
         task.setCreatedTime(LocalDateTime.now());
         task.setContent(content);
+        task.setProjectcode(wechatMessageParameter.getProjectCode());
         task.setReceiverWxid(wechatMessageParameter.getAssignerId());
         task.setStatus(0);
         taskMapper.insert(task);
@@ -276,6 +286,25 @@ public class DebuggerServiceImpl implements DebuggerService
     public String weekly()
     {
         return createReport(DebuggerOrder.WEEKLY);
+    }
+
+    @Override
+    public String listProjectCode(WechatMessageParameter wechatMessageParameter)
+    {
+        ProjectExample projectExample = new ProjectExample();
+        List<Project> projects = projectMapper.selectByExample(projectExample);
+        StringBuilder stringBuilder = new StringBuilder();
+        AtomicInteger atomicInteger = new AtomicInteger(1);
+        if (projects != null && projects.size() > 0){
+            projects.forEach((item) -> {
+                stringBuilder.append(atomicInteger.getAndIncrement()).append("、 【").append(item.getProjectcode()).append("】 ").append(item.getProjectname()).append("\n");
+            });
+        }
+        if(stringBuilder.length() == 0)
+        {
+            return "没有查询到数据。";
+        }
+        return stringBuilder.toString();
     }
 
     private String createReport(String daily)

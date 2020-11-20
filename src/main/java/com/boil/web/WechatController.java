@@ -96,6 +96,10 @@ public class WechatController
                     lovelyCatBean.setAt_name(wechatMessageParameter.getSender());
                     lovelyCatBean.setAt_wxid(wechatMessageParameter.getSenderId());
                 }
+            }else if (DebuggerOrder.PROJECT_CODE.equals(order))
+            {
+                // 项目代码
+                content = debuggerService.listProjectCode(wechatMessageParameter);
             } else
             {
                 if (LovelyCatMessageUtils.TYPE_PRIVATE.equals(type))

@@ -27,4 +27,6 @@ public class DebuggerOrder
     public static final String WEEKLY = "#注册周报";
 
     public static final String VERIFIED = "#实名";
+
+    public static final String PROJECT_CODE = "#项目代码";
 }

@@ -38,6 +38,8 @@ public class WechatMessageUtils
 
     private static final Pattern PATTERN_ORDER = Pattern.compile("[#](.+?) ");
 
+    private static final Pattern PATTERN_PROJECT_CODE = Pattern.compile("【(.+[A-Z])】");
+
     // 各种消息类型,除了扫带二维码事件
     /**
      * 文本消息
@@ -95,6 +97,7 @@ public class WechatMessageUtils
      * 事件推送消息中,自定义菜单事件,点击菜单跳转链接时的事件推送
      */
     public static final String MESSAGE_EVENT_VIEW = "VIEW";
+
 
     /**
      * 将xml转化为Map集合
@@ -170,6 +173,18 @@ public class WechatMessageUtils
         return date;
     }
 
+    public static String getProjectCode(String msg){
+        Matcher m = PATTERN_PROJECT_CODE.matcher(msg);
+        String date = "";
+        if(m.find()){
+            date = m.group(1);
+        }
+        if (StringUtils.isNoneEmpty(date)){
+            date = date.trim();
+        }
+        return date;
+    }
+
     public static String getMsgOrder(String msg){
         Matcher m = PATTERN_ORDER.matcher(msg);
         String order = "";
@@ -196,6 +211,8 @@ public class WechatMessageUtils
         wechatMessageParameter.setAssignerId(getMsgWxId(msg));
         String msgOrder = getMsgOrder(msg);
         wechatMessageParameter.setOrder(msgOrder);
+        String projectCode = getProjectCode(msg);
+        wechatMessageParameter.setProjectCode(projectCode);
 
         // 时间处理
         String strDate = getMsgDate(msg);
@@ -211,6 +228,7 @@ public class WechatMessageUtils
             content = msg.replaceAll(msgOrder, "")
                     .replaceAll("\\[@at(.+?)[]]", "")
                     .replaceAll("[0-9]{4}-[0-9]{2}-[0-9]{2}", "")
+                    .replaceAll(WechatMessageUtils.PATTERN_PROJECT_CODE.toString(), "")
                     .trim();
         }
         wechatMessageParameter.setContent(content);

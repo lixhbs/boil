@@ -47,14 +47,31 @@ CREATE TABLE timedtask
     PRIMARY KEY (id)
 ) COMMENT = ' ';
 
-CREATE TABLE account(
-                        id INT NOT NULL AUTO_INCREMENT  COMMENT 'id' ,
-                        created_by VARCHAR(32)    COMMENT '创建人' ,
-                        created_time DATETIME    COMMENT '创建时间' ,
-                        updated_by VARCHAR(32)    COMMENT '更新人' ,
-                        updated_time DATETIME    COMMENT '更新时间' ,
-                        wxid VARCHAR(32) NOT NULL   COMMENT '微信id' ,
-                        name VARCHAR(32) NOT NULL   COMMENT '实名' ,
-                        headimgurl VARCHAR(1024)    COMMENT '头像' ,
-                        PRIMARY KEY (id)
+CREATE TABLE account
+(
+    id           INT         NOT NULL AUTO_INCREMENT COMMENT 'id',
+    created_by   VARCHAR(32) COMMENT '创建人',
+    created_time DATETIME COMMENT '创建时间',
+    updated_by   VARCHAR(32) COMMENT '更新人',
+    updated_time DATETIME COMMENT '更新时间',
+    wxid         VARCHAR(32) NOT NULL COMMENT '微信id',
+    name         VARCHAR(32) NOT NULL COMMENT '实名',
+    headimgurl   VARCHAR(1024) COMMENT '头像',
+    PRIMARY KEY (id)
 ) COMMENT = ' ';
+
+ALTER TABLE task ADD COLUMN projectcode VARCHAR(32)  DEFAULT 'TODO'   COMMENT '项目代码' AFTER status;
+
+
+CREATE TABLE project
+(
+    id            INT         NOT NULL AUTO_INCREMENT COMMENT 'id',
+    created_by    VARCHAR(32) COMMENT '创建人',
+    created_time  DATETIME COMMENT '创建时间',
+    updated_by    VARCHAR(32) COMMENT '更新人',
+    updated_time  DATETIME COMMENT '更新时间',
+    projectname   VARCHAR(32) NOT NULL COMMENT '项目名称',
+    projectcode   VARCHAR(32) NOT NULL COMMENT '项目代码',
+    administrator VARCHAR(32) COMMENT '项目负责人',
+    PRIMARY KEY (id)
+) COMMENT = '项目 ';

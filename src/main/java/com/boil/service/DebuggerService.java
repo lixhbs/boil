@@ -137,4 +137,13 @@ public interface DebuggerService
      * @date 2020/11/19 09:52
      */
     String weekly();
+
+    /**
+     * 查询项目代码
+     * @author Lix.
+     * @param wechatMessageParameter wechatMessageParameter
+     * @return String
+     * @date 2020/11/20 17:06
+     */
+    String listProjectCode(WechatMessageParameter wechatMessageParameter);
 }

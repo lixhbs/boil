@@ -81,10 +81,10 @@ public class WechatController
             lovelyCatBean.setType("100");
 
             String content = "";
-            if (order.contains(DebuggerOrder.TASK))
+            if (DebuggerOrder.TASK.equals(order))
             {
                 content = debuggerService.pushTask(wechatMessageParameter);
-            } else if (order.contains(DebuggerOrder.TODO))
+            } else if (DebuggerOrder.TODO.equals(order))
             {
                 // 待办
                 content = debuggerService.listTodo(wechatMessageParameter);
@@ -102,15 +102,21 @@ public class WechatController
                 {
                     // 私聊
                     // 判断属于私聊的指令
-                    if (order.contains(DebuggerOrder.HELP))
+                    if (DebuggerOrder.HELP.equals(order))
                     {
                         content = debuggerService.debuggerHelp();
                     }
 
                     // 待办 完成
-                    if (order.contains(DebuggerOrder.FINISH))
+                    if (DebuggerOrder.FINISH.equals(order))
                     {
                         content = debuggerService.todoFinish(wechatMessageParameter);
+                    }
+
+                    // #实名
+                    if (DebuggerOrder.VERIFIED.equals(order))
+                    {
+                        content = debuggerService.verified(wechatMessageParameter);
                     }
                 }
 
@@ -118,19 +124,15 @@ public class WechatController
                 {
                     // 群聊
                     // 判断属于群聊的指令
-                    if (order.contains(DebuggerOrder.TASK))
-                    {
-                        content = debuggerService.pushTask(wechatMessageParameter);
-                    }
 
                     // 注册日报
-                    if (order.contains(DebuggerOrder.DAILY))
+                    if (DebuggerOrder.DAILY.equals(order))
                     {
                         content = debuggerService.registerDaily(wechatMessageParameter);
                     }
 
                     // 注册日报
-                    if (order.contains(DebuggerOrder.WEEKLY))
+                    if (DebuggerOrder.WEEKLY.equals(order))
                     {
                         content = debuggerService.registerWeekly(wechatMessageParameter);
                     }

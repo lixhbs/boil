@@ -120,4 +120,21 @@ public interface DebuggerService
      * @date 2020/11/18 18:32
      */
     String daily();
+
+    /**
+     * 实名认证
+     * @author Lix.
+     * @param wechatMessageParameter wechatMessageParameter
+     * @return String
+     * @date 2020/11/19 09:35
+     */
+    String verified(WechatMessageParameter wechatMessageParameter);
+
+    /**
+     * 发送周报
+     * @author Lix.
+     * @return String
+     * @date 2020/11/19 09:52
+     */
+    String weekly();
 }

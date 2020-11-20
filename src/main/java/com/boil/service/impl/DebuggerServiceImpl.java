@@ -2,12 +2,13 @@ package com.boil.service.impl;
 
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import com.boil.common.BoilUtil;
 import com.boil.common.DebuggerOrder;
 import com.boil.common.LovelyCatMessageUtils;
-import com.boil.common.WechatMessageUtils;
 import com.boil.dao.RobotMapper;
 import com.boil.dao.TaskMapper;
 import com.boil.dao.TimedtaskMapper;
+import com.boil.dao.UseraccountMapper;
 import com.boil.entity.WechatMessageParameter;
 import com.boil.model.*;
 import com.boil.service.DebuggerService;
@@ -17,13 +18,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
 import java.text.MessageFormat;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author lix.
@@ -48,23 +50,29 @@ public class DebuggerServiceImpl implements DebuggerService
     @Autowired
     private TimedtaskMapper timedtaskMapper;
 
+    @Autowired
+    protected UseraccountMapper useraccountMapper;
+
     @Override
     public String debuggerHelp()
     {
         return " ── HELP ──\n" +
-                "命令为'【】'内的文字，命令前必须为#\n" +
-                "【#任务】 可以自定义完成日期，默认一天\n" +
-                "\t\t\t\t『群聊』发送给艾特的那个人\n" +
-                "\t\t\t\t『私聊』默认发送给自己\n" +
-                "【#待办】『私聊』查询自己的待办任务\n" +
-                "【#未处理】显示自己没有修复的BUG\n" +
-                "【#认领-'BUG编码'】认领bug然后开始修复， 如：#认领-BTTEST0101002 \n" +
-                "【#解决-'BUG编码'】BUG修复完后在群中发送， 如：#解决-BTTEST0101002 \n" +
-                "--------------以下为测试人员指令-------------- \n" +
-                "【#未解决-'BUG编码'】 如：#未解决-BTTEST0101002 \n" +
-                "【#通过-'BUG编码'】   如：#通过-BTTEST0101002 \n" +
-                "【#挂起-'BUG编码'】   如：#挂起-BTTEST0101002 \n" +
-                "【#忽略-'BUG编码'】   如：#忽略-BTTEST0101002 \n" +
+                "命令和内容中间要加一个空格\n" +
+                "#任务 发布任务，可以指定时间，默认是当天。 \n" +
+                "\t\t\t\t『群聊』指定返送人，如：#任务 @陈伟杰 任务内容 2020-11-19\n" +
+                "\t\t\t\t『私聊』默认发送给自己 ，如：#任务 任务内容 2020-11-19\n" +
+                "#待办『私聊』查询自己的待办任务\n" +
+                "#完成『私聊』加上待办编号，此条待办标记完成 ，如：#完成 3 \n" +
+//                "【#项目列表】『*』所有项目\n" +
+                "#实名『私聊』修改昵称\n" +
+//                "【#未处理】显示自己没有修复的BUG\n" +
+//                "【#认领-'BUG编码'】认领bug然后开始修复， 如：#认领-BTTEST0101002 \n" +
+//                "【#解决-'BUG编码'】BUG修复完后在群中发送， 如：#解决-BTTEST0101002 \n" +
+//                "--------------以下为测试人员指令-------------- \n" +
+//                "【#未解决-'BUG编码'】 如：#未解决-BTTEST0101002 \n" +
+//                "【#通过-'BUG编码'】   如：#通过-BTTEST0101002 \n" +
+//                "【#挂起-'BUG编码'】   如：#挂起-BTTEST0101002 \n" +
+//                "【#忽略-'BUG编码'】   如：#忽略-BTTEST0101002 \n" +
                 " ── END ──";
     }
 
@@ -75,6 +83,11 @@ public class DebuggerServiceImpl implements DebuggerService
         if (StringUtils.isEmpty(wxId))
         {
             return "任务未指定执行人！";
+        }
+        String content = wechatMessageParameter.getContent();
+        if (StringUtils.isEmpty(content))
+        {
+            return "任务内容为空！";
         }
         return pushTaskExecute(wechatMessageParameter);
     }
@@ -87,7 +100,7 @@ public class DebuggerServiceImpl implements DebuggerService
         task.setDeadline(wechatMessageParameter.getDate());
         task.setCreatedBy(wechatMessageParameter.getSender());
         task.setUntitled(wechatMessageParameter.getSenderId());
-        task.setCreatedTime(new Date());
+        task.setCreatedTime(LocalDateTime.now());
         task.setContent(content);
         task.setReceiverWxid(wechatMessageParameter.getAssignerId());
         task.setStatus(0);
@@ -128,15 +141,14 @@ public class DebuggerServiceImpl implements DebuggerService
         for (Task task : tasks)
         {
             // 这里时间转换 需要优化 TODO
-            Date deadline = task.getDeadline();
+            LocalDate deadline = task.getDeadline();
+            LocalDate now = LocalDate.now();
             int i = -1;
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-            SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
             String format = "";
             if (deadline != null)
             {
-                i = deadline.compareTo(Date.from(LocalDate.parse(formatter.format(LocalDate.now()), formatter).atStartOfDay().atZone(ZoneId.systemDefault()).toInstant()));
-                format = " - " + simpleDateFormat.format(deadline);
+                i = deadline.compareTo(now);
+                format = " - " + deadline.format(DateTimeFormatter.ISO_DATE);
             }
             stringBuilder.append(MessageFormat.format(template, task.getId(), (i > -1 ? "" : "【超时】"), task.getContent(), format));
 
@@ -257,15 +269,34 @@ public class DebuggerServiceImpl implements DebuggerService
     @Override
     public String daily()
     {
+        return createReport(DebuggerOrder.DAILY);
+    }
+
+    @Override
+    public String weekly()
+    {
+        return createReport(DebuggerOrder.WEEKLY);
+    }
+
+    private String createReport(String daily)
+    {
         // 查询日报的定时任务
         TimedtaskExample timedtaskExample = new TimedtaskExample();
         TimedtaskExample.Criteria criteria = timedtaskExample.createCriteria();
-        criteria.andNameEqualTo(DebuggerOrder.DAILY);
+        criteria.andNameEqualTo(daily);
 
-        List<Timedtask> timedtasks = timedtaskMapper.selectByExample(timedtaskExample);
+        List<Timedtask> timedTasks = timedtaskMapper.selectByExample(timedtaskExample);
         // 这里默认发第一个群
+        timedTasks.forEach((item) -> {
+            pushReport(item, daily);
+        });
 
-        Timedtask timedtask = timedtasks.get(0);
+        return "";
+    }
+
+    private void pushReport(Timedtask timedtask, String daily)
+    {
+        String taskType = daily.replace("#注册","");
         String groupnum = timedtask.getGroupnum();
 
         // 根据群号 获取群里面的人员信息，然后去待办表里面查用户数据
@@ -294,26 +325,78 @@ public class DebuggerServiceImpl implements DebuggerService
                 }
             }
 
+            // 和用户表比 拿到实名的信息
+            UseraccountExample useraccountExample = new UseraccountExample();
+            UseraccountExample.Criteria userAccountCriteria = useraccountExample.createCriteria();
+            userAccountCriteria.andWxidIn(strings);
+            List<Useraccount> userAccounts = useraccountMapper.selectByExample(useraccountExample);
+            if (userAccounts != null && userAccounts.size() > 0)
+            {
+                userAccounts.forEach((item) -> {
+                    String wxid = item.getWxid();
+                    if(stringStringHashMap.containsKey(wxid)){
+                        stringStringHashMap.put(wxid, item.getName());
+                    }
+                });
+            }
+
             TaskExample taskExample = new TaskExample();
             TaskExample.Criteria criteria1 = taskExample.createCriteria();
             criteria1.andReceiverWxidIn(strings);
-            criteria1.andStatusEqualTo(0);
+
+            // 如果是周报就要周期查询
+            if(DebuggerOrder.WEEKLY.equals(daily)) {
+                List<LocalDate> mondayAndFriday = BoilUtil.getMondayAndFriday();
+                criteria1.andDeadlineBetween(mondayAndFriday.get(0), mondayAndFriday.get(1));
+            }
+
             List<Task> tasks = taskMapper.selectByExample(taskExample);
             if (tasks != null && tasks.size() > 0)
             {
-                String notice = sortTasks(tasks, stringStringHashMap);
-                return lovelyCatService.modifyGroupNotice(robotWxId, groupnum, notice);
+                String notice = sortTasks(taskType, tasks, stringStringHashMap);
+                lovelyCatService.modifyGroupNotice(robotWxId, groupnum, notice);
             }
 
         } catch (UnsupportedEncodingException e)
         {
             e.printStackTrace();
         }
-
-        return "";
     }
 
-    private String sortTasks(List<Task> tasks, HashMap<String, String> stringStringHashMap)
+
+    @Override
+    public String verified(WechatMessageParameter wechatMessageParameter)
+    {
+
+        // 先查询 是否存在，不存在就新增
+        String wxId = wechatMessageParameter.getSenderId();
+        UseraccountExample useraccountExample = new UseraccountExample();
+        UseraccountExample.Criteria criteria = useraccountExample.createCriteria();
+        criteria.andWxidEqualTo(wxId);
+
+        Useraccount userAccount = new Useraccount();
+        userAccount.setWxid(wxId);
+        userAccount.setName(wechatMessageParameter.getContent());
+
+        List<Useraccount> userAccounts = useraccountMapper.selectByExample(useraccountExample);
+        int res = 0;
+        if (userAccounts != null && userAccounts.size() > 0)
+        {
+            userAccount.setId(userAccounts.get(0).getId());
+            userAccount.setUpdatedTime(LocalDateTime.now());
+            res = useraccountMapper.updateByPrimaryKey(userAccount);
+        } else
+        {
+            userAccount.setCreatedTime(LocalDateTime.now());
+            res = useraccountMapper.insert(userAccount);
+        }
+
+        return res > 0 ? "实名成功" : "实名失败";
+    }
+
+
+
+    private String sortTasks(String taskType, List<Task> tasks, HashMap<String, String> stringStringHashMap)
     {
         // 任务总数
         int taskSize = tasks.size();
@@ -335,14 +418,65 @@ public class DebuggerServiceImpl implements DebuggerService
             taskInfoListHashMap.put(cnName, strings);
         }
 
-        return createTemplate(DebuggerOrder.DAILY, taskSize, taskInfoListHashMap);
+        return createTemplate(taskType, taskSize, taskInfoListHashMap);
     }
 
     private String createTemplate(String taskType, int taskSize, HashMap<String, List<Task>> taskInfoListHashMap)
     {
         StringBuilder stringBuilder = new StringBuilder();
-        stringBuilder.append(" --- ").append(taskType).append("---\n");
-        stringBuilder.append("总任务：").append(taskSize);
+
+        String title = LocalDate.now().format(DateTimeFormatter.ISO_DATE) + " " +taskType;
+        if (DebuggerOrder.WEEKLY.indexOf(taskType) > 0) {
+            List<LocalDate> mondayAndFriday = BoilUtil.getMondayAndFriday();
+            int weeksNum = BoilUtil.getWeeksNum();
+            LocalDate localDate = mondayAndFriday.get(0);
+            LocalDate localDate1 = mondayAndFriday.get(1);
+            title = "第" + weeksNum + "周 " + localDate.toString() + " ~ " + localDate1.getMonthValue() + "-" + localDate1.getDayOfMonth();
+        }
+        stringBuilder.append(" --- ")
+                .append(title)
+                .append(" ---\n");
+        stringBuilder.append("总任务数量：").append(taskSize).append("\n");
+
+        StringBuilder taskInfos = new StringBuilder();
+
+        taskInfoListHashMap.forEach((name, list) -> {
+            taskInfos.append("\n > ").append(name).append("\n");
+            AtomicInteger index = new AtomicInteger(1);
+            AtomicInteger overtimeCount = new AtomicInteger();
+            AtomicInteger tadyCount = new AtomicInteger();
+            list.forEach((task) -> {
+                LocalDate deadline = task.getDeadline();
+                Integer status = task.getStatus();
+
+
+                LocalDate now = LocalDate.now();
+                int i = -1;
+                String format = "";
+                if (deadline != null)
+                {
+                    i = deadline.compareTo(now);
+                    format = " - " + deadline.format(DateTimeFormatter.ISO_DATE);
+                }
+                String overtime = "";
+                if (status == 1){
+                    overtime = "【完成】";
+                } else {
+                    if (i < 0){
+                        overtime = "[叹气]【超时】";
+                        overtimeCount.getAndIncrement();
+                    }
+                    if (i == 0){
+                        overtime = "【今日任务】";
+                        tadyCount.getAndIncrement();
+                    }
+                }
+                taskInfos.append(index.getAndIncrement()).append("、").append(overtime).append(task.getContent()).append(format).append("\n");
+            });
+            stringBuilder.append(" > ").append(name).append(" - ").append("总任务：").append(list.size()).append(", 今日任务：").append(tadyCount).append(", 未完成：").append(overtimeCount.get() + tadyCount.get()).append(", 超时：").append(overtimeCount).append("\n");
+        });
+        stringBuilder.append("\n").append(" --- 详情 ---").append("\n");
+        stringBuilder.append(taskInfos);
 
         return stringBuilder.toString();
     }

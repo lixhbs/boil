@@ -199,14 +199,13 @@ public class WechatMessageUtils
 
         // 时间处理
         String strDate = getMsgDate(msg);
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-        if ( StringUtils.isEmpty(strDate))
+        DateTimeFormatter formatter = DateTimeFormatter.ISO_LOCAL_DATE;
+        wechatMessageParameter.setDate(LocalDate.now());
+        if ( StringUtils.isNotEmpty(strDate))
         {
-            strDate = formatter.format(LocalDate.now());
+            wechatMessageParameter.setDate(LocalDate.parse(strDate, formatter));
         }
-        LocalDate parse = LocalDate.parse(strDate, formatter);
-        Instant instant2 = parse.atStartOfDay().atZone(ZoneId.systemDefault()).toInstant();
-        wechatMessageParameter.setDate(Date.from(instant2));
+
         String content = "";
         if(!msg.equals(msgOrder)) {
             content = msg.replaceAll(msgOrder, "")

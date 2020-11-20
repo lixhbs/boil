@@ -19,9 +19,21 @@
                         password="root8102">
         </jdbcConnection>
 
-
-        <javaTypeResolver >
-            <property name="forceBigDecimals" value="false" />
+        <javaTypeResolver>
+            <!--是否使用 bigDecimal，默认false。
+                false，把JDBC DECIMAL 和 NUMERIC 类型解析为 Integer
+                true，把JDBC DECIMAL 和 NUMERIC 类型解析为java.math.BigDecimal-->
+            <property name="forceBigDecimals" value="true"/>
+            <!--默认false
+                false，将所有 JDBC 的时间类型解析为 java.util.Date
+                true，将 JDBC 的时间类型按如下规则解析
+                    DATE	                -> java.time.LocalDate
+                    TIME	                -> java.time.LocalTime
+                    TIMESTAMP                   -> java.time.LocalDateTime
+                    TIME_WITH_TIMEZONE  	-> java.time.OffsetTime
+                    TIMESTAMP_WITH_TIMEZONE	-> java.time.OffsetDateTime
+                -->
+            <property name="useJSR310Types" value="true"/>
         </javaTypeResolver>
 
         <javaModelGenerator targetPackage="com.boil.model" targetProject="src/main/java">
@@ -37,8 +49,7 @@
             <property name="enableSubPackages" value="true" />
         </javaClientGenerator>
 
-
-        <table schema="boil" tableName="timedtask"/>
+        <table schema="boil" tableName="task"/>
 
     </context>
 

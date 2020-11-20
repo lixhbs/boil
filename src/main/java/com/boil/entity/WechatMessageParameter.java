@@ -1,5 +1,6 @@
 package com.boil.entity;
 
+import java.time.LocalDate;
 import java.util.Date;
 
 /**
@@ -29,7 +30,7 @@ public class WechatMessageParameter
     String senderId;
     String assigner;
     String assignerId;
-    Date date;
+    LocalDate date;
     String order;
     String msg;
     String groupId;
@@ -107,12 +108,12 @@ public class WechatMessageParameter
         this.assignerId = assignerId;
     }
 
-    public Date getDate()
+    public LocalDate getDate()
     {
         return date;
     }
 
-    public void setDate(Date date)
+    public void setDate(LocalDate date)
     {
         this.date = date;
     }

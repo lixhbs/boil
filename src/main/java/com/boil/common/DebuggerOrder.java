@@ -1,11 +1,5 @@
 package com.boil.common;
 
-import sun.awt.HKSCS;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
 
 /**
  * @author lix.
@@ -31,4 +25,6 @@ public class DebuggerOrder
     public static final String DAILY = "#注册日报";
 
     public static final String WEEKLY = "#注册周报";
+
+    public static final String VERIFIED = "#实名";
 }

@@ -38,9 +38,16 @@ public class RobotController
         return new JsonResult(ResultCode.SUCCESS,robotInfo);
 
     }
+
     @PostMapping("/daily")
     public JsonResult daily(){
         String String = debuggerService.daily();
+        return new JsonResult();
+    }
+
+    @PostMapping("/weekly")
+    public JsonResult weekly(){
+        String String = debuggerService.weekly();
         return new JsonResult();
     }
 

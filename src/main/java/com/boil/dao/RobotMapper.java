@@ -1,7 +1,7 @@
 package com.boil.dao;
 
-import com.boil.model.Robot;
-import com.boil.model.RobotExample;
+import com.boil.entity.model.Robot;
+import com.boil.entity.model.RobotExample;
 import java.util.List;
 
 import org.apache.ibatis.annotations.Mapper;

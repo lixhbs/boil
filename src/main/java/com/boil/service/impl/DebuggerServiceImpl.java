@@ -7,7 +7,12 @@ import com.boil.common.DebuggerOrder;
 import com.boil.common.LovelyCatMessageUtils;
 import com.boil.dao.*;
 import com.boil.entity.WechatMessageParameter;
-import com.boil.model.*;
+import com.boil.entity.bo.GroupMemberBO;
+import com.boil.entity.model.*;
+import com.boil.manager.ResultTemplate;
+import com.boil.manager.RobotManager;
+import com.boil.manager.TaskManager;
+import com.boil.manager.TimedTaskManager;
 import com.boil.service.DebuggerService;
 import com.boil.service.LovelyCatService;
 import org.apache.commons.lang3.StringUtils;
@@ -16,10 +21,8 @@ import org.springframework.stereotype.Service;
 
 import java.io.UnsupportedEncodingException;
 import java.text.MessageFormat;
-import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -52,6 +55,15 @@ public class DebuggerServiceImpl implements DebuggerService
 
     @Autowired
     private ProjectMapper projectMapper;
+
+    @Autowired
+    private TaskManager taskManager;
+
+    @Autowired
+    private TimedTaskManager timedTaskManager;
+
+    @Autowired
+    private RobotManager robotManager;
 
     @Override
     public String debuggerHelp()
@@ -111,11 +123,24 @@ public class DebuggerServiceImpl implements DebuggerService
         task.setUntitled(wechatMessageParameter.getSenderId());
         task.setCreatedTime(LocalDateTime.now());
         task.setContent(content);
+
+        List<Useraccount> userAccounts = taskManager.selectAccountByWxId(wechatMessageParameter.getSenderId());
+
+        if (userAccounts != null && userAccounts.size() > 0)
+        {
+            task.setName(userAccounts.get(0).getName());
+        } else {
+            task.setName(wechatMessageParameter.getAssigner());
+        }
+
         task.setProjectcode(wechatMessageParameter.getProjectCode());
         task.setReceiverWxid(wechatMessageParameter.getAssignerId());
         task.setStatus(0);
-        taskMapper.insert(task);
-        return content + " - 任务已记录！";
+        int res = taskMapper.insert(task);
+        if (res > -1){
+            return "*记录成功* " + content;
+        }
+        return "*记录失败* " + content;
     }
 
     @Override
@@ -216,44 +241,10 @@ public class DebuggerServiceImpl implements DebuggerService
     }
 
     @Override
-    public Robot getRobotInfoSync()
-    {
-        JSONArray loggedAccountList = lovelyCatService.getLoggedAccountList();
-        if (loggedAccountList == null)
-        {
-            throw new NullPointerException("未获取到机器人数据");
-        }
-        Robot robot = new Robot();
-        JSONObject jsonObject = (JSONObject) loggedAccountList.get(0);
-        robot.setWxid(jsonObject.getString("wxid"));
-        robot.setWxNum(jsonObject.getString("wx_num"));
-        robot.setHeadimgurl(jsonObject.getString("headimgurl"));
-        robotMapper.insert(robot);
-        return robot;
-    }
-
-    @Override
-    public Robot getRobotInfo()
-    {
-        Robot robot = null;
-        RobotExample robotExample = new RobotExample();
-        List<Robot> robots = robotMapper.selectByExample(robotExample);
-        if (robots == null || robots.size() == 0)
-        {
-            robot = getRobotInfoSync();
-        } else
-        {
-            robot = robots.get(0);
-        }
-        return robot;
-    }
-
-    @Override
     public String sendGroupAtMsg(String toWxId, String atWxId, String atName, String msg)
     {
-        Robot robotInfo = getRobotInfo();
-        String res = lovelyCatService.sendGroupAtMsg(robotInfo.getWxid(), toWxId, atWxId, atName, msg);
-        return res;
+        Robot robotInfo = robotManager.getRobotInfo();
+        return lovelyCatService.sendGroupAtMsg(robotInfo.getWxid(), toWxId, atWxId, atName, msg);
     }
 
     @Override
@@ -285,7 +276,33 @@ public class DebuggerServiceImpl implements DebuggerService
     @Override
     public String weekly()
     {
-        return createReport(DebuggerOrder.WEEKLY);
+        List<Timedtask> timedTasks = timedTaskManager.selectTimedTaskByName(DebuggerOrder.WEEKLY);
+        Robot robotInfo = robotManager.getRobotInfo();
+        String wxId = robotInfo.getWxid();
+
+        for (Timedtask timedtask : timedTasks)
+        {
+            // 通过定时任务配置 获取是那个群，群里面的成员，和成员实名信息（如果没有实名就是默认获取昵称）
+            String groupNum = timedtask.getGroupnum();
+            GroupMemberBO groupMemberBO = robotManager.listMember(groupNum, wxId);
+            HashMap<String, String> map = groupMemberBO.getMap();
+            List<String> userList = groupMemberBO.getUserList();
+
+            TaskExample taskExample = new TaskExample();
+            TaskExample.Criteria criteria1 = taskExample.createCriteria();
+            criteria1.andReceiverWxidIn(userList);
+            List<LocalDate> mondayAndFriday = BoilUtil.getMondayAndFriday();
+            criteria1.andDeadlineBetween(mondayAndFriday.get(0), mondayAndFriday.get(1));
+
+            List<Task> tasks = taskMapper.selectByExample(taskExample);
+            if (tasks != null && tasks.size() > 0)
+            {
+                String notice = ResultTemplate.createWeekReport(tasks, map);
+                lovelyCatService.modifyGroupNotice(wxId, groupNum, notice);
+            }
+        }
+
+        return "";
     }
 
     @Override
@@ -315,7 +332,7 @@ public class DebuggerServiceImpl implements DebuggerService
         criteria.andNameEqualTo(daily);
 
         List<Timedtask> timedTasks = timedtaskMapper.selectByExample(timedtaskExample);
-        // 这里默认发第一个群
+
         timedTasks.forEach((item) -> {
             pushReport(item, daily);
         });
@@ -329,7 +346,7 @@ public class DebuggerServiceImpl implements DebuggerService
         String groupnum = timedtask.getGroupnum();
 
         // 根据群号 获取群里面的人员信息，然后去待办表里面查用户数据
-        Robot robotInfo = getRobotInfo();
+        Robot robotInfo = robotManager.getRobotInfo();
         String robotWxId = robotInfo.getWxid();
         String groupMemberList = lovelyCatService.getGroupMemberList(robotWxId, groupnum, "1");
 
@@ -396,28 +413,23 @@ public class DebuggerServiceImpl implements DebuggerService
     @Override
     public String verified(WechatMessageParameter wechatMessageParameter)
     {
-
         // 先查询 是否存在，不存在就新增
-        String wxId = wechatMessageParameter.getSenderId();
-        UseraccountExample useraccountExample = new UseraccountExample();
-        UseraccountExample.Criteria criteria = useraccountExample.createCriteria();
-        criteria.andWxidEqualTo(wxId);
-
-        Useraccount userAccount = new Useraccount();
-        userAccount.setWxid(wxId);
-        userAccount.setName(wechatMessageParameter.getContent());
-
-        List<Useraccount> userAccounts = useraccountMapper.selectByExample(useraccountExample);
+        List<Useraccount> userAccounts = taskManager.selectAccountByWxId(wechatMessageParameter.getSenderId());
         int res = 0;
+        Useraccount useraccount = new Useraccount();
+        String content = wechatMessageParameter.getContent();
+        useraccount.setName(content);
         if (userAccounts != null && userAccounts.size() > 0)
         {
-            userAccount.setId(userAccounts.get(0).getId());
-            userAccount.setUpdatedTime(LocalDateTime.now());
-            res = useraccountMapper.updateByPrimaryKey(userAccount);
+            useraccount.setId(userAccounts.get(0).getId());
+            useraccount.setUpdatedTime(LocalDateTime.now());
+            useraccount.setUpdatedBy(content);
+            res = useraccountMapper.updateByPrimaryKey(useraccount);
         } else
         {
-            userAccount.setCreatedTime(LocalDateTime.now());
-            res = useraccountMapper.insert(userAccount);
+            useraccount.setCreatedTime(LocalDateTime.now());
+            useraccount.setCreatedBy(content);
+            res = useraccountMapper.insert(useraccount);
         }
 
         return res > 0 ? "实名成功" : "实名失败";

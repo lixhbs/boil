@@ -36,7 +36,7 @@
             <property name="useJSR310Types" value="true"/>
         </javaTypeResolver>
 
-        <javaModelGenerator targetPackage="com.boil.model" targetProject="src/main/java">
+        <javaModelGenerator targetPackage="com.boil.entity.model" targetProject="src/main/java">
             <property name="enableSubPackages" value="true" />
             <property name="trimStrings" value="true" />
         </javaModelGenerator>

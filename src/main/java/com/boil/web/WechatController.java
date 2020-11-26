@@ -135,7 +135,7 @@ public class WechatController
                         content = debuggerService.registerDaily(wechatMessageParameter);
                     }
 
-                    // 注册日报
+                    // 注册周报
                     if (DebuggerOrder.WEEKLY.equals(order))
                     {
                         content = debuggerService.registerWeekly(wechatMessageParameter);

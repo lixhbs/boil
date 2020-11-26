@@ -1,7 +1,7 @@
 package com.boil.service;
 
 import com.boil.entity.WechatMessageParameter;
-import com.boil.model.Robot;
+import com.boil.entity.model.Robot;
 
 import java.io.UnsupportedEncodingException;
 
@@ -66,22 +66,6 @@ public interface DebuggerService
      * @date 2020/11/17 17:24
      */
     boolean todoReport(String groupId);
-
-    /**
-     * 获取机器人信息 非缓存
-     * @author Lix.
-     * @return Robot
-     * @date 2020/11/18 16:36
-     */
-    Robot getRobotInfoSync();
-
-    /**
-     * 获取缓存中数据库信息
-     * @author Lix.
-     * @return Robot
-     * @date 2020/11/18 16:37
-     */
-    Robot getRobotInfo();
 
     /**
      * 在群里面发消息并且艾特某个人

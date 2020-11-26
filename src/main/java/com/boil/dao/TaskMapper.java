@@ -1,7 +1,7 @@
 package com.boil.dao;
 
-import com.boil.model.Task;
-import com.boil.model.TaskExample;
+import com.boil.entity.model.Task;
+import com.boil.entity.model.TaskExample;
 import java.util.List;
 import org.apache.ibatis.annotations.Param;
 

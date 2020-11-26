@@ -1,7 +1,7 @@
 package com.boil.dao;
 
-import com.boil.model.Timedtask;
-import com.boil.model.TimedtaskExample;
+import com.boil.entity.model.Timedtask;
+import com.boil.entity.model.TimedtaskExample;
 import java.util.List;
 
 import org.apache.ibatis.annotations.Mapper;

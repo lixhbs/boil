@@ -1,7 +1,7 @@
 package com.boil.dao;
 
-import com.boil.model.Project;
-import com.boil.model.ProjectExample;
+import com.boil.entity.model.Project;
+import com.boil.entity.model.ProjectExample;
 import java.util.List;
 
 import org.apache.ibatis.annotations.Mapper;

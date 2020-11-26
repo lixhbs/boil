@@ -1,7 +1,7 @@
 package com.boil.dao;
 
-import com.boil.model.Useraccount;
-import com.boil.model.UseraccountExample;
+import com.boil.entity.model.Useraccount;
+import com.boil.entity.model.UseraccountExample;
 import java.util.List;
 import org.apache.ibatis.annotations.Param;
 

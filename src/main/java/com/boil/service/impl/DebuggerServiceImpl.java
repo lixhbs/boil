@@ -10,6 +10,7 @@ import com.boil.entity.WechatMessageParameter;
 import com.boil.entity.bo.GroupMemberBO;
 import com.boil.entity.model.*;
 import com.boil.manager.ResultTemplate;
+import com.boil.manager.impl.ResultTemplateImpl;
 import com.boil.manager.RobotManager;
 import com.boil.manager.TaskManager;
 import com.boil.manager.TimedTaskManager;
@@ -26,6 +27,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 /**
  * @author lix.
@@ -64,6 +66,13 @@ public class DebuggerServiceImpl implements DebuggerService
 
     @Autowired
     private RobotManager robotManager;
+
+    @Autowired
+    private ResultTemplate resultTemplate;
+
+    private static String ROBOT_WXID = "";
+
+    private static String GROUP_ID = "";
 
     @Override
     public String debuggerHelp()
@@ -295,10 +304,25 @@ public class DebuggerServiceImpl implements DebuggerService
             criteria1.andDeadlineBetween(mondayAndFriday.get(0), mondayAndFriday.get(1));
 
             List<Task> tasks = taskMapper.selectByExample(taskExample);
+
+            // 查询所有的项目
+            ProjectExample projectExample = new ProjectExample();
+            List<Project> projects = projectMapper.selectByExample(projectExample);
+            Map<String, Project> admin = new HashMap<>(4);
+            if(projects != null && projects.size() > 0)
+            {
+                projects.forEach(item -> admin.put(item.getProjectcode(), item));
+            }
+
             if (tasks != null && tasks.size() > 0)
             {
-                String notice = ResultTemplate.createWeekReport(tasks, map);
-                lovelyCatService.modifyGroupNotice(wxId, groupNum, notice);
+                HashMap<String, String> weekReport = resultTemplate.createWeekReport(tasks, map, projects);
+                weekReport.forEach((code, template) -> {
+                    String administrator = admin.get(code).getAdministrator();
+                    String projectName = admin.get(code).getProjectname();
+                    template = " > 【"+projectName+"】\n" + template;
+                    lovelyCatService.sendGroupAtMsg(wxId, groupNum, administrator, map.get(administrator), template);
+                });
             }
         }
 
@@ -344,10 +368,12 @@ public class DebuggerServiceImpl implements DebuggerService
     {
         String taskType = daily.replace("#注册","");
         String groupnum = timedtask.getGroupnum();
+        GROUP_ID = groupnum;
 
         // 根据群号 获取群里面的人员信息，然后去待办表里面查用户数据
         Robot robotInfo = robotManager.getRobotInfo();
         String robotWxId = robotInfo.getWxid();
+        ROBOT_WXID = robotWxId;
         String groupMemberList = lovelyCatService.getGroupMemberList(robotWxId, groupnum, "1");
 
         try
@@ -479,9 +505,10 @@ public class DebuggerServiceImpl implements DebuggerService
                 .append(" ---\n");
         stringBuilder.append("总任务数量：").append(taskSize).append("\n");
 
-        StringBuilder taskInfos = new StringBuilder();
+
 
         taskInfoListHashMap.forEach((name, list) -> {
+            StringBuilder taskInfos = new StringBuilder();
             taskInfos.append("\n > ").append(name).append("\n");
             AtomicInteger index = new AtomicInteger(1);
             AtomicInteger overtimeCount = new AtomicInteger();
@@ -517,7 +544,7 @@ public class DebuggerServiceImpl implements DebuggerService
             stringBuilder.append(" > ").append(name).append(" - ").append("总任务：").append(list.size()).append(", 今日任务：").append(tadyCount).append(", 未完成：").append(overtimeCount.get() + tadyCount.get()).append(", 超时：").append(overtimeCount).append("\n");
         });
         stringBuilder.append("\n").append(" --- 详情 ---").append("\n");
-        stringBuilder.append(taskInfos);
+//        stringBuilder.append(taskInfos);
 
         return stringBuilder.toString();
     }

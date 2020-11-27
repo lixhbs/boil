@@ -12,6 +12,7 @@ import com.mashape.unirest.http.exceptions.UnirestException;
 import org.springframework.stereotype.Service;
 
 import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 
 /**
  * @author lix.
@@ -67,7 +68,13 @@ public class LovelyCatServiceImpl implements LovelyCatService
     {
         LovelyCatBean lovelyCatBean = new LovelyCatBean();
         lovelyCatBean.setType(LovelyCatMessageUtils.TYPE_GROUP_AT);
-        lovelyCatBean.setMsg(msg);
+        try
+        {
+            lovelyCatBean.setMsg(URLEncoder.encode(msg, "UTF-8"));
+        } catch (UnsupportedEncodingException e)
+        {
+            e.printStackTrace();
+        }
         lovelyCatBean.setRobot_wxid(robot);
         lovelyCatBean.setTo_wxid(toWxId);
         lovelyCatBean.setAt_wxid(atWxId);
